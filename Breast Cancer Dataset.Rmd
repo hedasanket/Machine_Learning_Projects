@@ -1,0 +1,84 @@
+---
+title: "Breast Cancer Dataset Analysis"
+author: "Sanket Heda"
+date: "October 15, 2017"
+output:
+  html_document: default
+  Breast Cancer Dataset Analysis: default
+---
+
+Load the dataset in R_Markdown
+
+```{r}
+BreastCancerDataset <- read.csv("F:/Master's/Extra Class/Data Science Project/breast-cancer-wisconsin-data/data.csv")
+```
+
+The dataset has been loaded in BreastCancerDataset
+
+```{r, message=TRUE, warning=TRUE}
+bcd <- BreastCancerDataset #saving the data into another space with name bcd
+attach(bcd) #Attaching the bcd dataset
+
+str(bcd) #Checking the structure of the dataset
+
+bcd = bcd[-33] #Removing the X variable
+bcd = bcd[-1] #Removing the ID variable
+
+#Encoding the target feature as factor
+bcd$diagnosis = factor(bcd$diagnosis)
+#bcd$diagnosis = factor(bcd$diagnosis, labels = c(0,1)) # In case if you need binary labels to target variable
+
+summary(bcd) #checking the summary of the dataset
+
+summary(bcd$diagnosis) #Checking the summary of target variable which is diagnosis
+```
+
+In the above result B is the benign Cancer which dosen't kill the patient, but M is the Malignant Cancer which is dangerous and would kill the patient!
+
+Spliting the dataset randomly by taking 75% dataset for training and 25% dataset for testing from total dataset
+```{r}
+# Splitting the dataset into the Training set and Test set
+#install.packages('caTools')
+
+library(caTools)
+set.seed(123)
+split = sample.split(bcd$diagnosis, SplitRatio = 0.75)
+training_set = subset(bcd, split == TRUE)
+test_set = subset(bcd, split == FALSE)
+
+```
+
+The next step is to run a logistic regression model on the dataset. 
+
+
+```{r}
+# Fitting Logistic Regression to the Training set
+classifier = glm(formula = diagnosis ~ .,
+                 family = "binomial",
+                 data = training_set)
+
+```
+
+
+```{r}
+# This is done and the summary of the model has to be generated to check the summary.
+summary(classifier)
+```
+
+The next step is to get the optimal cutoff point for the ROC curve instead of the 0.5 threshold.
+
+```{r}
+
+# Predicting the Test set results
+prob_pred = predict(classifier, type = 'response', newdata = test_set)
+
+# Getting the cutoff for the predictions
+# install.packages("InformationValue")
+# install.packages("scales")
+library(InformationValue)
+optcutoff <- optimalCutoff(test_set$diagnosis,prob_pred)
+optcutoff
+
+y_pred = ifelse(prob_pred > optcutoff, 1, 0)
+
+```
